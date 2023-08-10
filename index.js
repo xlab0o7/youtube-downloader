@@ -2,23 +2,42 @@ const express = require('express');
 const ytdl = require('ytdl-core');
 const fs = require('fs');
 const path = require('path');
-
+const axios = require('axios');
 const app = express();
 const port = 3000;
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
 
 
 const downloadFolder = path.join(__dirname, 'downloads');
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/index.html");
+  });
 
-app.get('/download', async (req, res) => {
+// this is for youtube videos download into video / audio 
+
+app.post('/submit-url', async (req, res) => {
   try {
-    const videoUrl = req.query.url;
+    const videoUrl = req.body.videoUrl;
+    const format = req.body.format; 
+
     const info = await ytdl.getInfo(videoUrl);
     const videoTitle = info.videoDetails.title.replace(/[^\w\s]/gi, '');
-    const videoStream = ytdl(videoUrl);
 
-    const filePath = path.join(downloadFolder, `${videoTitle}.mp4`);
+    let videoStream;
+    let fileExtension;
 
-    res.setHeader('Content-Disposition', `attachment; filename="${videoTitle}.mp4"`);
+    if (format === 'audio') {
+      videoStream = ytdl(videoUrl, { filter: 'audioonly' });
+      fileExtension = 'mp3';
+    } else {
+      videoStream = ytdl(videoUrl);
+      fileExtension = 'mp4';
+    }
+
+    const filePath = path.join(downloadFolder, `${videoTitle}.${fileExtension}`);
+
+    res.setHeader('Content-Disposition', `attachment; filename="${videoTitle}.${fileExtension}"`);
     videoStream.pipe(fs.createWriteStream(filePath));
 
     videoStream.on('progress', (chunkLength, downloaded, total) => {
@@ -42,11 +61,6 @@ app.get('/download', async (req, res) => {
           res.status(500).send('An error occurred');
         } else {
           console.log('File downloaded successfully!');
-        //   fs.unlink(filePath, (error) => {
-        //     if (error) {
-        //       console.error('Error:', error);
-        //     }
-        //   });
         }
       });
     });
