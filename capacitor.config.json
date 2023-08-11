@@ -1,0 +1,10 @@
+{
+  "appId": "com.youtube.downloader",
+  "appName": "youtube video downloader",
+  "webDir": "www.123.org",
+  "server": {
+    "androidScheme": "http",
+    "port": 3000,
+    "url": "http://127.0.0.1:3000"
+  }
+}
